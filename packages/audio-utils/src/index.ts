@@ -2,6 +2,7 @@ export class AudioEngine {
   context: AudioContext | null = null;
   analyser: AnalyserNode | null = null;
   masterGain: GainNode | null = null;
+  destinationStream: MediaStreamAudioDestinationNode | null = null;
 
   constructor() {}
 
@@ -14,10 +15,12 @@ export class AudioEngine {
     this.masterGain = this.context.createGain();
     this.analyser = this.context.createAnalyser();
     this.analyser.fftSize = 2048;
+    this.destinationStream = this.context.createMediaStreamDestination();
 
-    // Connect: Master Gain -> Analyser -> Destination
+    // Connect: Master Gain -> Analyser -> Destination & Stream
     this.masterGain.connect(this.analyser);
     this.analyser.connect(this.context.destination);
+    this.analyser.connect(this.destinationStream);
 
     return this.context;
   }

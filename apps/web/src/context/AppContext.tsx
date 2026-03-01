@@ -11,6 +11,7 @@ interface AppContextType extends AppState {
   setBarkDetected: (detected: boolean) => void;
   setLighthouseActive: (active: boolean) => void;
   setShowOnboarding: (show: boolean) => void;
+  setGestureEnabled: (enabled: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -31,6 +32,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setBarkDetected: (barkDetected: boolean) => updateState({ barkDetected }),
     setLighthouseActive: (lighthouseActive: boolean) => updateState({ lighthouseActive }),
     setShowOnboarding: (showOnboarding: boolean) => updateState({ showOnboarding }),
+    setGestureEnabled: (gestureEnabled: boolean) => updateState({ gestureEnabled }),
   };
 
   return (

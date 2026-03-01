@@ -1,43 +1,31 @@
-# Implementation Plan: 3rd Party API Integrations
+# Remaining Tasks Plan
 
-This plan outlines the steps to integrate **MediaPipe** (for Gesture Recognition) and **Agora** (for Real-time Audio) into the Kizuna Sonic application.
+## 1. Sound Asset Generation (MiniMax Integration)
+**Status:** ⚠️ Using fallback beeps.
+**Goal:** Replace synthetic beeps with high-quality AI voice commands ("Tomare", "Oide", "Kiken") using the MiniMax API.
 
-## 1. MediaPipe Hands Integration (Sign-to-Sonic)
-**Goal:** Enable users to trigger commands ("Stop", "Come", "Danger") using hand gestures via the webcam.
+- [ ] **MiniMax Client Setup**: 
+    - Create a server-side utility to call MiniMax TTS API (using `NEXT_MINIMAX_GROUP_ID` and API Key).
+- [ ] **Generation UI**: 
+    - Add a hidden/admin page (e.g., `/admin/sounds`) to trigger generation of the 3 static files.
+    - Save files to `public/sounds/`.
+- [ ] **Integration**: Ensure `useAudio` loads these new files.
 
-- [ ] **Install Dependencies**: Add `@mediapipe/tasks-vision` to `apps/web`.
-- [ ] **Asset Setup**: 
-    - Configure the `gesture_recognizer.task` model file (download or reference URL).
-    - Ensure it is accessible in `apps/web/public/models/`.
-- [ ] **Hook Implementation (`useGestureRecognition`)**:
-    - Initialize `GestureRecognizer`.
-    - Process video frames from `navigator.mediaDevices.getUserMedia`.
-    - Map detected gestures to commands:
-        - `Open_Palm` -> **Stop**
-        - `Pointing_Up` -> **Come**
-        - `Closed_Fist` (or custom) -> **Danger**
-- [ ] **Component Implementation (`GestureCanvas`)**:
-    - Render video feed and overlay hand landmarks.
-    - Provide visual feedback for detected gestures.
-- [ ] **Integration**: Connect `useGestureRecognition` to `AppContext` to trigger `playCommand`.
+## 2. Mobile Optimization & Polish
+**Status:** 🟡 Basic responsive layout implemented.
+**Goal:** Ensure the app works flawlessly on mobile browsers (permissions, touch targets).
 
-## 2. Agora RTC Integration (Live Audio Bridge)
-**Goal:** Enable low-latency audio streaming for remote monitoring/commanding (Sponsor Requirement).
+- [ ] **Meta Viewport**: Verify `viewport` settings for mobile (prevent zooming on taps).
+- [ ] **Touch Actions**: Ensure "Hold to Talk" or buttons don't trigger context menus.
+- [ ] **Permission Recovery**: Handle cases where mobile Safari denies permissions initially.
 
-- [ ] **Install Dependencies**: Add `agora-rtc-sdk-ng` to `apps/web`.
-- [ ] **Environment Setup**:
-    - Create `.env.local` for `NEXT_PUBLIC_AGORA_APP_ID`.
-- [ ] **Hook Implementation (`useAgora`)**:
-    - Initialize Agora Client.
-    - Implement `joinChannel`, `publishAudio`, and `leaveChannel`.
-    - Create a custom audio track from the `AudioEngine` destination node (Web Audio API -> Agora).
-- [ ] **UI Integration**:
-    - Add a "Connect Remote" toggle in the header or settings.
-    - Show connection status (Connected/Disconnected).
+## 3. Deployment Preparation
+**Status:** 🔴 Not deployed.
+**Goal:** Deploy the application to Vercel.
 
-## 3. Verification & Testing
-- [ ] **Gesture Test**: Verify that showing a hand gesture triggers the correct sound and updates the UI.
-- [ ] **Agora Test**: Verify that audio played locally is streamed to the Agora channel (requires a second device/tab to listen).
+- [ ] **Build Check**: Ensure `pnpm build` passes with all environment variables (MediaPipe, Agora).
+- [ ] **Environment Variables**: Document exactly which vars are needed for production (`NEXT_PUBLIC_AGORA_APP_ID`, `MINIMAX_API_KEY`, etc.).
+- [ ] **Vercel Config**: Add `vercel.json` if custom headers (for SharedArrayBuffer/MediaPipe) are needed.
 
-## 4. MiniMax (Voice Synthesis)
-*Note: As per requirements, sounds are pre-generated. No runtime API integration is planned unless dynamic synthesis is requested.*
+## 4. Documentation
+- [ ] **README.md**: Update with setup instructions, env var guide, and feature usage.

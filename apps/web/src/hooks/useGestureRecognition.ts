@@ -1,5 +1,5 @@
-import { FilesetResolver, GestureRecognizer, DrawingUtils } from "@mediapipe/tasks-vision";
 import { useEffect, useRef, useState, useCallback } from "react";
+import type { GestureRecognizer } from "@mediapipe/tasks-vision";
 import { useAppContext } from "../context/AppContext";
 import { CommandType } from "@kizuna/types";
 
@@ -8,6 +8,7 @@ export function useGestureRecognition(onGestureDetected?: (command: CommandType)
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gestureRecognizer, setGestureRecognizer] = useState<GestureRecognizer | null>(null);
+  const [tasksVision, setTasksVision] = useState<any>(null);
   const [detectedGestureName, setDetectedGestureName] = useState<string | null>(null);
   const requestRef = useRef<number>();
   const lastGestureTime = useRef<number>(0);
@@ -17,10 +18,14 @@ export function useGestureRecognition(onGestureDetected?: (command: CommandType)
   useEffect(() => {
     const init = async () => {
       try {
-        const vision = await FilesetResolver.forVisionTasks(
+        const vision = await import("@mediapipe/tasks-vision");
+        setTasksVision(vision);
+        
+        const { FilesetResolver, GestureRecognizer } = vision;
+        const visionTasks = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
         );
-        const recognizer = await GestureRecognizer.createFromOptions(vision, {
+        const recognizer = await GestureRecognizer.createFromOptions(visionTasks, {
           baseOptions: {
             modelAssetPath: "/models/gesture_recognizer.task",
             delegate: "GPU",
@@ -33,12 +38,15 @@ export function useGestureRecognition(onGestureDetected?: (command: CommandType)
         console.error("Failed to load gesture recognizer:", error);
       }
     };
-    init();
+    if (typeof window !== 'undefined') {
+        init();
+    }
   }, []);
 
   const predictWebcam = useCallback(() => {
-    if (!gestureRecognizer || !videoRef.current || !canvasRef.current) return;
+    if (!gestureRecognizer || !videoRef.current || !canvasRef.current || !tasksVision) return;
 
+    const { GestureRecognizer, DrawingUtils } = tasksVision;
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
@@ -106,7 +114,7 @@ export function useGestureRecognition(onGestureDetected?: (command: CommandType)
     }
 
     requestRef.current = requestAnimationFrame(predictWebcam);
-  }, [gestureRecognizer, onGestureDetected]);
+  }, [gestureRecognizer, tasksVision, onGestureDetected]);
 
 
   // Start Camera and Recognition Loop

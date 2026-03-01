@@ -4,6 +4,30 @@ import CommandPalette from '../components/CommandPalette';
 import VisualEar from '../components/VisualEar';
 import SonicLighthouse from '../components/SonicLighthouse';
 import PermissionRequest from '../components/PermissionRequest';
+import GestureCanvas from '../components/GestureCanvas';
+import AgoraController from '../components/AgoraController';
+import { useAppContext } from '../context/AppContext';
+
+function GestureToggle() {
+  const { gestureEnabled, setGestureEnabled } = useAppContext();
+  
+  return (
+    <button 
+      onClick={() => setGestureEnabled(!gestureEnabled)}
+      className={`
+        flex items-center gap-2 px-4 py-2 rounded-full border transition-all
+        ${gestureEnabled 
+          ? 'bg-blue-600/20 border-blue-500 text-blue-400' 
+          : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:bg-neutral-700'}
+      `}
+    >
+      <span className="text-xl">✋</span>
+      <span className="text-xs font-bold uppercase tracking-wider">
+        {gestureEnabled ? 'Gestures On' : 'Enable Gestures'}
+      </span>
+    </button>
+  );
+}
 
 export default function Home() {
   return (
@@ -21,9 +45,13 @@ export default function Home() {
           </p>
         </div>
         
-        <div className="flex items-center gap-3 mt-6 md:mt-0 bg-neutral-900/50 px-4 py-2 rounded-full border border-neutral-800">
-          <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]" />
-          <span className="text-sm font-mono text-green-400">SYSTEM ONLINE</span>
+        <div className="flex flex-col md:flex-row items-center gap-4 mt-6 md:mt-0">
+          <AgoraController />
+          <GestureToggle />
+          <div className="bg-neutral-900/50 px-4 py-2 rounded-full border border-neutral-800 flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]" />
+            <span className="text-sm font-mono text-green-400">ONLINE</span>
+          </div>
         </div>
       </div>
 
@@ -31,6 +59,7 @@ export default function Home() {
       <div className="flex flex-col items-center w-full max-w-5xl gap-10 z-10">
         <CommandPalette />
         <VisualEar />
+        <GestureCanvas />
         <SonicLighthouse />
       </div>
       
