@@ -170,5 +170,17 @@ export function useAudio() {
     }
   };
 
-  return { playCommand, initAudio, isReady };
+  const setCustomSound = async (command: string, buffer: ArrayBuffer) => {
+    await initAudio();
+    if (!audioEngine.context) return;
+    
+    try {
+      const audioBuffer = await audioEngine.context.decodeAudioData(buffer);
+      buffers.current[command] = audioBuffer;
+    } catch (e) {
+      console.error("Failed to decode custom sound", e);
+    }
+  };
+
+  return { playCommand, initAudio, isReady, setCustomSound };
 }

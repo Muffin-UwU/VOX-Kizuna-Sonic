@@ -6,6 +6,7 @@ import SonicLighthouse from '../components/SonicLighthouse';
 import PermissionRequest from '../components/PermissionRequest';
 import GestureCanvas from '../components/GestureCanvas';
 import AgoraController from '../components/AgoraController';
+import VoiceGenerator from '../components/VoiceGenerator';
 import { useAppContext } from '../context/AppContext';
 
 function GestureToggle() {
@@ -61,6 +62,7 @@ export default function Home() {
         <VisualEar />
         <GestureCanvas />
         <SonicLighthouse />
+        <VoiceGenerator />
       </div>
       
       {/* Footer */}
