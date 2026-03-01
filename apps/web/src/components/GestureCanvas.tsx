@@ -11,7 +11,6 @@ export default function GestureCanvas() {
   const { playCommand } = useAudio();
 
   const handleGestureDetected = (command: CommandType) => {
-    // Only play if not already playing to avoid chaos
     if (!isPlaying) {
       console.log("Gesture Triggered:", command);
       playCommand(command);

@@ -3,6 +3,7 @@ export class AudioEngine {
   analyser: AnalyserNode | null = null;
   masterGain: GainNode | null = null;
   destinationStream: MediaStreamAudioDestinationNode | null = null;
+  soundCache: Map<string, AudioBuffer> = new Map();
 
   constructor() {}
 
@@ -35,11 +36,31 @@ export class AudioEngine {
     return this.context !== null;
   }
 
-  async loadSound(url: string): Promise<AudioBuffer> {
+  async loadSound(url: string, key?: string): Promise<AudioBuffer> {
     if (!this.context) throw new Error("AudioEngine not initialized");
+    
+    // Check cache first if key provided
+    if (key && this.soundCache.has(key)) {
+      return this.soundCache.get(key)!;
+    }
+
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
-    return await this.context.decodeAudioData(arrayBuffer);
+    const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+    
+    if (key) {
+      this.soundCache.set(key, audioBuffer);
+    }
+    
+    return audioBuffer;
+  }
+
+  setSound(key: string, buffer: AudioBuffer) {
+    this.soundCache.set(key, buffer);
+  }
+
+  getSound(key: string): AudioBuffer | undefined {
+    return this.soundCache.get(key);
   }
 
   playBuffer(buffer: AudioBuffer): AudioBufferSourceNode {

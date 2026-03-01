@@ -14,12 +14,12 @@ export function useAudio() {
     setPlaying, 
     setCurrentCommand, 
     lighthouseActive,
-    isPlaying 
+    isPlaying,
+    aiVoiceEnabled // New context value
   } = useAppContext();
 
   const currentSource = useRef<AudioBufferSourceNode | null>(null);
   const lighthouseOsc = useRef<OscillatorNode | null>(null);
-  const buffers = useRef<Record<string, AudioBuffer>>({});
   const [isReady, setIsReady] = useState(false);
 
   // Initialize Audio Context on first user interaction
@@ -37,10 +37,11 @@ export function useAudio() {
       const loadSounds = async () => {
         try {
           for (const [key, url] of Object.entries(SOUND_FILES)) {
-            if (!buffers.current[key]) {
+            // Check global cache instead of local ref
+            if (!audioEngine.getSound(key)) {
               try {
-                const buffer = await audioEngine.loadSound(url);
-                buffers.current[key] = buffer;
+                // Pass key to cache it globally
+                await audioEngine.loadSound(url, key);
               } catch (e) {
                 console.warn(`Could not load sound ${key}, will use fallback beep.`);
               }
@@ -144,9 +145,14 @@ export function useAudio() {
       currentSource.current = null;
     }
 
-    const buffer = buffers.current[command];
+    const buffer = audioEngine.getSound(command);
     
-    if (buffer) {
+    // Logic: 
+    // If aiVoiceEnabled is TRUE, try to play the buffer.
+    // If buffer exists, play it.
+    // If aiVoiceEnabled is FALSE, OR buffer is missing, play fallback beep.
+    
+    if (aiVoiceEnabled && buffer) {
       setCurrentCommand(command);
       setPlaying(true);
       
@@ -165,7 +171,7 @@ export function useAudio() {
         setCurrentCommand(null);
       }
     } else {
-      // Fallback if file not found
+      // Fallback to beep if AI voice disabled or file not found
       playFallbackBeep(command);
     }
   };
@@ -176,7 +182,7 @@ export function useAudio() {
     
     try {
       const audioBuffer = await audioEngine.context.decodeAudioData(buffer);
-      buffers.current[command] = audioBuffer;
+      audioEngine.setSound(command, audioBuffer);
     } catch (e) {
       console.error("Failed to decode custom sound", e);
     }

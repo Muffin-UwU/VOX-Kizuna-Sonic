@@ -12,12 +12,16 @@ interface AppContextType extends AppState {
   setLighthouseActive: (active: boolean) => void;
   setShowOnboarding: (show: boolean) => void;
   setGestureEnabled: (enabled: boolean) => void;
+  // New state for AI Voice Toggle
+  aiVoiceEnabled: boolean;
+  setAiVoiceEnabled: (enabled: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(DEFAULT_APP_STATE);
+  const [aiVoiceEnabled, setAiVoiceEnabled] = useState(false); // Default to beeps
 
   const updateState = (updates: Partial<AppState>) => {
     setState(prev => ({ ...prev, ...updates }));
@@ -33,6 +37,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLighthouseActive: (lighthouseActive: boolean) => updateState({ lighthouseActive }),
     setShowOnboarding: (showOnboarding: boolean) => updateState({ showOnboarding }),
     setGestureEnabled: (gestureEnabled: boolean) => updateState({ gestureEnabled }),
+    aiVoiceEnabled,
+    setAiVoiceEnabled,
   };
 
   return (

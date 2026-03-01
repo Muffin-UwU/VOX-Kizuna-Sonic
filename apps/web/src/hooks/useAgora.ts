@@ -22,6 +22,29 @@ export function useAgora() {
     }
   }, [AgoraRTC]);
 
+  useEffect(() => {
+      if (!client) return;
+
+      const handleUserPublished = async (user: any, mediaType: "audio" | "video") => {
+          await client.subscribe(user, mediaType);
+          if (mediaType === "audio") {
+              user.audioTrack?.play();
+          }
+      };
+
+      const handleUserUnpublished = (user: any) => {
+          if (user.audioTrack) user.audioTrack.stop();
+      };
+
+      client.on("user-published", handleUserPublished);
+      client.on("user-unpublished", handleUserUnpublished);
+
+      return () => {
+          client.off("user-published", handleUserPublished);
+          client.off("user-unpublished", handleUserUnpublished);
+      };
+  }, [client]);
+
   const joinChannel = async () => {
     if (!client) {
       setError("Agora Client not ready");
@@ -41,7 +64,9 @@ export function useAgora() {
       await audioEngine.resume();
 
       // Join
-      await client.join(AGORA_APP_ID, CHANNEL_NAME, null, null);
+      // Use token from env if available, otherwise null (for App ID only mode)
+      const token = process.env.NEXT_PUBLIC_AGORA_TOKEN || null;
+      await client.join(AGORA_APP_ID, CHANNEL_NAME, token, null);
       
       // Get the audio stream from the AudioEngine destination
       // This stream contains everything going to the speakers (commands, beeps)

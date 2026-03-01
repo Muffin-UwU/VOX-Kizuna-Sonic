@@ -1,27 +1,36 @@
-# Remaining Tasks Plan
+# Implementation Plan: MiniMax Custom Voice Integration
 
-## 1. MiniMax TTS Integration
-**Status:** ✅ Completed (Client-side with hardcoded fallbacks).
-- Implemented `VoiceGenerator` component.
-- Updated `useAudio` to support custom buffers.
-- Verified API calls to MiniMax.
+## 1. Goal
+Replace the default fallback beeps with AI-generated voice commands ("Stop!", "Come!", "Danger!") and ensure they are used by both:
+1.  **Manual Button Clicks** (CommandPalette)
+2.  **Gesture Recognition** (MediaPipe)
 
-## 2. Mobile Optimization & Polish
-**Status:** 🟡 Pending.
-**Goal:** Ensure the app works flawlessly on mobile browsers (permissions, touch targets).
+## 2. Current State
+- `VoiceGenerator` can generate audio and save it to `useAudio`'s buffer cache.
+- `useAudio` already prioritizes `buffers.current[command]` over fallback beeps.
+- `GestureRecognition` calls `onGestureDetected`, which likely calls `playCommand`.
 
-- [ ] **Meta Viewport**: Verify `viewport` settings for mobile (prevent zooming on taps).
-- [ ] **Touch Actions**: Ensure "Hold to Talk" or buttons don't trigger context menus.
-- [ ] **Permission Recovery**: Handle cases where mobile Safari denies permissions initially.
-- [ ] **Responsive Design Check**: Ensure all components (VoiceGenerator, AgoraController, etc.) stack correctly on small screens.
+## 3. Tasks
 
-## 3. Deployment Preparation
-**Status:** 🔴 Not deployed.
-**Goal:** Deploy the application to Vercel.
+### Task A: Pre-generate Default Voice Assets (Optional but Recommended)
+Instead of relying on the user to generate sounds every time, we should:
+1.  Generate "Stop", "Come", "Danger" MP3s using MiniMax.
+2.  Save them to `public/sounds/`.
+3.  **Action**: Since I cannot "hear" or "download" from the browser to disk easily in this environment, I will create a script or instructions for you to do this, OR we can stick to the dynamic generation flow.
+    *   *Decision*: For now, we rely on the `VoiceGenerator` to override the defaults. The app already tries to load from `/sounds/stop.mp3`. If those files exist, they are used.
 
-- [ ] **Build Check**: Ensure `pnpm build` passes with all environment variables (MediaPipe, Agora, MiniMax).
-- [ ] **Environment Variables**: Document exactly which vars are needed for production (`NEXT_PUBLIC_AGORA_APP_ID`, `NEXT_PUBLIC_MINIMAX_API_KEY`, etc.).
-- [ ] **Vercel Config**: Add `vercel.json` if custom headers (for SharedArrayBuffer/MediaPipe) are needed.
+### Task B: Ensure Gesture Triggers use Custom Sounds
+- **Verify**: Check `apps/web/src/components/GestureCanvas.tsx` to ensure it passes the command to `playCommand`.
+- **Logic**: `GestureCanvas` -> `onGestureDetected` -> `playCommand('stop')` -> `useAudio` checks `buffers.current['stop']`.
+- **Result**: If the user has "Saved" a voice from `VoiceGenerator`, `buffers.current['stop']` will be populated. The gesture will automatically use it.
 
-## 4. Documentation
-- [ ] **README.md**: Update with setup instructions, env var guide, and feature usage.
+### Task C: Persist Generated Sounds (Enhancement)
+- Currently, if you refresh the page, the custom sounds are lost (because `buffers.current` is in memory).
+- **Todo**: Implement `IndexedDB` or `localStorage` (base64) to persist these custom sounds across reloads?
+    *   *Decision*: For MVP/Hackathon, in-memory is acceptable. We can add a "Quick Generate Defaults" button that generates all 3 prompts at once.
+
+## 4. Execution Steps
+1.  **Verify Gesture Wiring**: Ensure `GestureCanvas` is correctly connected to `playCommand`.
+2.  **Add "Generate All Defaults" Button**: A convenience button in `VoiceGenerator` to auto-generate "Stop", "Come here", "Danger" in one click.
+
+Let's start by verifying the `GestureCanvas` wiring.

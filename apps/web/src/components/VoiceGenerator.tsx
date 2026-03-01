@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAudio } from '../hooks/useAudio';
 import { CommandType } from '@kizuna/types';
+import { useAppContext } from '../context/AppContext';
 
 export default function VoiceGenerator() {
   const [text, setText] = useState('');
@@ -10,22 +11,14 @@ export default function VoiceGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedBuffer, setGeneratedBuffer] = useState<ArrayBuffer | null>(null);
   const { setCustomSound, playCommand } = useAudio();
+  const { aiVoiceEnabled, setAiVoiceEnabled } = useAppContext();
 
-  const handleGenerate = async () => {
-    if (!text) return;
-    setIsGenerating(true);
-    setGeneratedBuffer(null);
-
+  const generateSingleVoice = async (text: string): Promise<ArrayBuffer | null> => {
     const apiKey = process.env.NEXT_PUBLIC_MINIMAX_API_KEY || 'sk-cp-WD1kiNWZRjKFP41751GniXyCyqsuRo-m0uyvIZNyyIt6KpOzRSXpDKuxqcu50GXPmNDA5A20Nk-HgKdcbwvLTKZbd0womJM5WYTTT0KHToJf_LgBLGgYg5I';
     const groupId = process.env.NEXT_PUBLIC_MINIMAX_GROUP_ID || '2027975541096722533';
     const apiUrl = process.env.NEXT_PUBLIC_MINIMAX_API_URL || 'https://api.minimax.io/v1';
 
-    if (!apiKey || !groupId) {
-        console.error("Missing keys", { apiKey: !!apiKey, groupId: !!groupId });
-        alert("Missing MiniMax API Key or Group ID. Please check your .env.local file.");
-        setIsGenerating(false);
-        return;
-    }
+    if (!apiKey || !groupId) return null;
 
     try {
       const payload = {
@@ -55,34 +48,35 @@ export default function VoiceGenerator() {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-          const err = await response.text();
-          throw new Error(`API Error: ${response.status} - ${err}`);
-      }
-
+      if (!response.ok) throw new Error("API Error");
       const data = await response.json();
+      if (data.base_resp?.status_code !== 0) throw new Error("Service Error");
       
-      if (data.base_resp?.status_code !== 0) {
-          throw new Error(data.base_resp?.status_msg || "Unknown API Error");
-      }
-
       const hexString = data.data?.audio;
-      if (!hexString) throw new Error("No audio data received");
+      if (!hexString) throw new Error("No audio");
 
-      // Convert Hex string to ArrayBuffer
-      // Create a Uint8Array from the hex string
       const match = hexString.match(/.{1,2}/g);
-      if (!match) throw new Error("Invalid hex string");
+      if (!match) throw new Error("Invalid hex");
       
-      const buffer = new Uint8Array(match.map((byte: string) => parseInt(byte, 16))).buffer;
-      setGeneratedBuffer(buffer);
-
-    } catch (e: any) {
+      return new Uint8Array(match.map((byte: string) => parseInt(byte, 16))).buffer;
+    } catch (e) {
       console.error(e);
-      alert(`Failed to generate voice: ${e.message}`);
-    } finally {
-      setIsGenerating(false);
+      return null;
     }
+  };
+
+  const handleGenerate = async () => {
+    if (!text) return;
+    setIsGenerating(true);
+    setGeneratedBuffer(null);
+    
+    const buffer = await generateSingleVoice(text);
+    if (buffer) {
+        setGeneratedBuffer(buffer);
+    } else {
+        alert("Failed to generate voice");
+    }
+    setIsGenerating(false);
   };
 
   const handleSave = async (command: CommandType) => {
@@ -131,7 +125,7 @@ export default function VoiceGenerator() {
           onClick={handleGenerate}
           disabled={isGenerating || !text}
           className={`
-            px-6 py-3 rounded-xl font-bold transition-all text-white shadow-lg
+            px-6 py-3 rounded-xl font-bold transition-all text-white shadow-lg whitespace-nowrap
             ${isGenerating || !text 
               ? 'bg-neutral-700 text-neutral-500 cursor-not-allowed' 
               : 'bg-blue-600 hover:bg-blue-500'}
@@ -139,6 +133,23 @@ export default function VoiceGenerator() {
         >
           {isGenerating ? 'Generating...' : 'Generate Voice'}
         </button>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-2">
+        <button
+            onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)}
+            className={`
+                w-full py-3 rounded-xl font-bold text-sm uppercase tracking-wider border transition-all
+                ${aiVoiceEnabled 
+                    ? 'bg-blue-600/20 border-blue-500 text-blue-400 hover:bg-blue-600/30' 
+                    : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:bg-neutral-700 hover:text-white'}
+            `}
+        >
+            {aiVoiceEnabled ? '🔊 AI Voice Mode: ENABLED' : '🔈 AI Voice Mode: DISABLED (Using Beeps)'}
+        </button>
+        <p className="text-xs text-center text-neutral-500">
+            When enabled, saved AI voices will be used for all commands (Buttons & Gestures).
+        </p>
       </div>
 
       {generatedBuffer && (
